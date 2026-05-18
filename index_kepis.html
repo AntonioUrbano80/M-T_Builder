@@ -155,6 +155,23 @@
     .panel-body::-webkit-scrollbar-track { background: var(--parchment-dark); }
     .panel-body::-webkit-scrollbar-thumb { background: var(--accent-light); border-radius: 3px; }
 
+    /* MOBILE */
+    .mob-tabs { display: none; background: var(--parchment-dark); border-bottom: 2px solid var(--border); flex-shrink: 0; }
+    .mob-tab { flex: 1; padding: 9px 4px; border: none; background: transparent; font-family: inherit; font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; color: var(--ink-light); border-bottom: 3px solid transparent; transition: all .15s; }
+    .mob-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: bold; }
+    @media (max-width: 640px) {
+      body { height: 100dvh; }
+      .mob-tabs { display: flex; }
+      .main { grid-template-columns: 1fr; }
+      .panel { display: none !important; }
+      .panel.mob-active { display: flex !important; }
+      .panel:first-child { border-right: none; }
+      .hrow { flex-direction: column; align-items: flex-start; }
+      .controls { width: 100%; }
+      select { min-width: 0; width: 100%; }
+      .foot-btns { flex-wrap: wrap; }
+    }
+
     /* SPONSOR */
     .sponsor-bar {
       display: flex; align-items: center; justify-content: flex-end; gap: 8px;
@@ -173,7 +190,7 @@
       .panel { display: block !important; overflow: visible !important; height: auto !important; border: none !important; }
       .panel-body { overflow: visible !important; height: auto !important; max-height: none !important; }
       .panel:first-child { display: none !important; }
-      .controls, .cat-tabs, .del-btn, .mini-btn, .foot-btns, .add-btn, .bar-track, .back-link, .year-toggle-wrap, .sponsor-bar { display: none !important; }
+      .controls, .cat-tabs, .del-btn, .dup-btn, .mini-btn, .foot-btns, .add-btn, .bar-track, .back-link, .year-toggle-wrap, .sponsor-bar, .mob-tabs { display: none !important; }
       .panel-head { background: white !important; border-bottom: 1pt solid #ccc !important; }
       header { background: white !important; border-bottom: 2pt solid #333; padding: 8pt 12pt; }
       header * { color: black !important; }
@@ -241,8 +258,13 @@
   </div>
 </header>
 
+<div class="mob-tabs">
+  <button class="mob-tab active" onclick="mobTab(0)">⚔ Unidades</button>
+  <button class="mob-tab" onclick="mobTab(1)">📋 Lista</button>
+</div>
+
 <div class="main">
-  <div class="panel">
+  <div class="panel mob-active">
     <div class="panel-head">
       <span class="panel-title">Unidades disponibles</span>
       <div class="cat-tabs">
@@ -935,6 +957,11 @@ function addUnit(unitId){
     alert('Solo se puede incluir '+UNIT_MAX[unitId]+' unidad de este tipo.');return;
   }
   S.roster.push({uid:S.uid++,ak:S.army,uid2:unitId,extra:0,upgs:[]});renderRoster();saveRoster();
+  if(window.innerWidth<=640)mobTab(1);
+}
+function mobTab(idx){
+  document.querySelectorAll('.mob-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('mob-active',i===idx));
 }
 function delUnit(uid){ S.roster=S.roster.filter(e=>e.uid!==uid);renderRoster();saveRoster(); }
 function chExtra(uid,d){ const e=S.roster.find(e=>e.uid===uid);if(!e)return;const u=findUnit(e.ak,e.uid2);e.extra=Math.max(0,Math.min(u.extra,e.extra+d));renderRoster();saveRoster(); }
