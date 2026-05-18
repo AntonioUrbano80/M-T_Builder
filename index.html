@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mousquets &amp; Tomahawks — Constructor de Listas</title>
+  <style>
+    :root {
+      --parchment: #f4e4c1; --parchment-dark: #e8d5a0;
+      --ink: #2c1810; --ink-light: #5c3820;
+      --accent: #8b4513; --accent-light: #cd853f;
+      --border: #8b6914; --shadow: rgba(44,24,16,0.3);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia,'Times New Roman',serif;
+      background: var(--parchment);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: linear-gradient(135deg,var(--ink) 0%,var(--ink-light) 100%);
+      color: var(--parchment);
+      padding: 18px 24px;
+      border-bottom: 3px solid var(--accent);
+      text-align: center;
+    }
+    header h1 { font-size: 1.5rem; letter-spacing: 3px; text-transform: uppercase; color: var(--accent-light); }
+    header h1 em { color: var(--parchment); font-style: italic; font-size: .85em; }
+    header p { font-size: .8rem; color: var(--parchment-dark); opacity: .75; margin-top: 5px; letter-spacing: 1px; }
+
+    .hub {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      padding: 48px 24px;
+      flex-wrap: wrap;
+    }
+
+    .game-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,.38);
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 36px 40px;
+      width: 280px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: all .18s;
+      cursor: pointer;
+      box-shadow: 0 3px 12px var(--shadow);
+    }
+    .game-card:hover {
+      background: rgba(139,69,19,.12);
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .card-era {
+      font-size: .62rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--ink-light);
+      opacity: .7;
+    }
+    .card-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+    .card-img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      opacity: .88;
+      transition: opacity .18s;
+    }
+    .game-card:hover .card-img { opacity: 1; }
+    .sponsor-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px 24px;
+      background: var(--parchment-dark);
+      border-top: 1px solid var(--border);
+      opacity: .55;
+    }
+    .sponsor-strip:hover { opacity: .8; transition: opacity .2s; }
+    .sponsor-strip span {
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--ink-light);
+    }
+    .sponsor-strip img {
+      height: 90px;
+      object-fit: contain;
+    }
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: var(--ink);
+      text-align: center;
+    }
+    .card-sub {
+      font-size: .72rem;
+      color: var(--accent);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      text-align: center;
+    }
+    .card-desc {
+      font-size: .75rem;
+      color: var(--ink-light);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .card-btn {
+      margin-top: 6px;
+      background: var(--accent);
+      color: var(--parchment);
+      border: none;
+      border-radius: 3px;
+      padding: 7px 20px;
+      font-family: inherit;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .game-card:hover .card-btn { background: var(--ink-light); }
+
+    footer {
+      background: var(--parchment-dark);
+      border-top: 2px solid var(--border);
+      padding: 10px;
+      text-align: center;
+      font-size: .65rem;
+      color: var(--ink-light);
+      opacity: .6;
+      letter-spacing: .5px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Mousquets <em>&amp; Tomahawks</em> — Constructor de Listas</h1>
+  <p>Elige el suplemento con el que deseas jugar</p>
+</header>
+
+<div class="hub">
+  <a class="game-card" href="index_v4.html">
+    <span class="card-era">Suplemento</span>
+    <img class="card-img" src="imagenes/shakos.jpg" alt="Shakos &amp; Bayonets">
+    <div class="card-title">Shakos &amp; Bayonets</div>
+    <div class="card-sub">Guerras Napoleónicas · 1800–1815</div>
+    <div class="card-desc">Ejércitos Francés, Británico, Prusiano, Español, Austriaco, Ruso y Naciones Menores.</div>
+    <span class="card-btn">Abrir constructor</span>
+  </a>
+
+  <a class="game-card" href="index_kepis.html">
+    <span class="card-era">Suplemento</span>
+    <img class="card-img" src="imagenes/kepis.webp" alt="Kepis &amp; Bayonets">
+    <div class="card-title">Kepis &amp; Bayonets</div>
+    <div class="card-sub">Guerra Civil Americana · 1861–1865</div>
+    <div class="card-desc">Ejércitos de la Unión y Confederado, con regimientos icónicos y tropas especiales.</div>
+    <span class="card-btn">Abrir constructor</span>
+  </a>
+</div>
+
+<div class="sponsor-strip">
+  <span>Con el apoyo de</span>
+  <a href="https://caliga.net/catalogo/" target="_blank" rel="noopener"><img src="imagenes/caliga.jpg" alt="Caliga"></a>
+</div>
+<footer>Mousquets &amp; Tomahawks — Studio Tomahawk · Constructor no oficial</footer>
+</body>
+</html>

@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shakos &amp; Bayonets — Constructor de Listas</title>
+  <style>
+    :root {
+      --parchment: #f4e4c1; --parchment-dark: #e8d5a0;
+      --ink: #2c1810; --ink-light: #5c3820;
+      --accent: #8b4513; --accent-light: #cd853f;
+      --border: #8b6914; --shadow: rgba(44,24,16,0.3);
+      --red: #8b0000; --green: #2e5a1c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia,'Times New Roman',serif; background: var(--parchment); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    header { background: linear-gradient(135deg,var(--ink) 0%,var(--ink-light) 100%); color: var(--parchment); padding: 10px 18px; border-bottom: 3px solid var(--accent); flex-shrink: 0; }
+    .hrow { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    h1 { font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-light); }
+    h1 em { color: var(--parchment); font-style: italic; font-size: .85em; }
+    .controls { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .ctrl { display: flex; flex-direction: column; gap: 3px; }
+    .ctrl label { font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--parchment-dark); opacity: .75; }
+    select, input[type=number] { background: var(--parchment); color: var(--ink); border: 2px solid var(--accent-light); border-radius: 3px; padding: 4px 8px; font-family: inherit; font-size: .85rem; }
+    .back-link { font-size: .65rem; color: var(--parchment-dark); opacity: .7; text-decoration: none; letter-spacing: .5px; border: 1px solid rgba(255,255,255,.2); padding: 3px 8px; border-radius: 2px; transition: opacity .12s; }
+    .back-link:hover { opacity: 1; }
+    select { min-width: 210px; cursor: pointer; }
+    input[type=number] { width: 80px; text-align: center; }
+
+    /* LAYOUT */
+    .main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+    .panel { display: flex; flex-direction: column; overflow: hidden; }
+    .panel:first-child { border-right: 3px solid var(--border); }
+    .panel-head { background: var(--parchment-dark); border-bottom: 2px solid var(--border); padding: 7px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+    .panel-title { font-size: .82rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-light); }
+    .panel-body { flex: 1; overflow-y: auto; padding: 9px 10px; }
+
+    /* CAT TABS */
+    .cat-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+    .cat-tab { padding: 2px 8px; border: 1px solid var(--border); border-radius: 2px; background: transparent; color: var(--ink-light); cursor: pointer; font-family: inherit; font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; transition: all .12s; }
+    .cat-tab.active { background: var(--accent); color: var(--parchment); border-color: var(--accent); }
+    .cat-tab:hover:not(.active) { background: var(--parchment-dark); }
+
+    /* UNIT CARDS */
+    .cat-sep { font-size: .62rem; text-transform: uppercase; letter-spacing: 2px; color: var(--ink-light); padding: 7px 2px 3px; border-bottom: 1px solid var(--border); margin-bottom: 4px; margin-top: 9px; }
+    .cat-sep:first-child { margin-top: 0; }
+    .unit-card { background: rgba(255,255,255,.32); border: 1px solid var(--border); border-radius: 3px; padding: 7px 9px; margin-bottom: 4px; cursor: pointer; transition: all .12s; }
+    .unit-card:hover { background: rgba(139,69,19,.1); border-color: var(--accent); transform: translateX(2px); }
+    .uc-top { display: flex; align-items: center; gap: 8px; }
+    .uc-info { flex: 1; }
+    .uc-name { font-size: .86rem; font-weight: bold; }
+    .uc-detail { font-size: .69rem; color: var(--ink-light); margin-top: 1px; }
+    .uc-stats { font-size: .67rem; color: var(--ink-light); margin-top: 3px; font-style: italic; border-top: 1px dotted var(--border); padding-top: 3px; }
+    .uc-notas { font-size: .63rem; color: var(--ink); background: rgba(139,69,19,.08); border: 1px solid var(--border); border-radius: 2px; padding: 3px 5px; margin-top: 4px; font-style: italic; line-height: 1.35; }
+    .uc-upg-list { margin-top: 4px; border-top: 1px dotted var(--border); padding-top: 3px; }
+    .uc-upg-item { font-size: .62rem; color: var(--ink-light); line-height: 1.4; }
+    .uc-upg-item .un { font-weight: bold; color: var(--ink); }
+    .uc-upg-item .uc { font-weight: bold; }
+    .uc-upg-item .uc.pos { color: var(--red); }
+    .uc-upg-item .uc.neg { color: var(--green); }
+    .uc-upg-item .ue { font-style: italic; }
+    .uc-cost { font-size: 1rem; font-weight: bold; color: var(--accent); white-space: nowrap; }
+    .add-btn { background: var(--accent); color: var(--parchment); border: none; border-radius: 2px; width: 21px; height: 21px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; transition: background .12s; }
+    .add-btn:hover { background: var(--ink-light); }
+
+    /* ROSTER */
+    .roster-entry { background: rgba(255,255,255,.42); border: 1px solid var(--border); border-radius: 3px; padding: 7px 9px; margin-bottom: 6px; }
+    .re-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .re-info { flex: 1; min-width: 120px; }
+    .re-name { font-size: .86rem; font-weight: bold; }
+    .re-sub { font-size: .68rem; color: var(--ink-light); margin-top: 1px; }
+    .re-stats { font-size: .64rem; color: var(--ink-light); font-style: italic; margin-top: 2px; }
+    .re-notas { font-size: .63rem; color: var(--ink-light); font-style: italic; margin-top: 3px; padding-top: 3px; border-top: 1px dotted var(--border); }
+    .mini-ctrl { display: flex; align-items: center; gap: 4px; }
+    .mini-btn { background: var(--parchment-dark); border: 1px solid var(--border); border-radius: 2px; width: 19px; height: 19px; cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; color: var(--ink); font-family: inherit; line-height: 1; transition: background .1s; }
+    .mini-btn:hover:not(:disabled) { background: var(--accent-light); color: white; }
+    .mini-btn:disabled { opacity: .3; cursor: default; }
+    .mini-count { font-size: .78rem; font-weight: bold; min-width: 55px; text-align: center; }
+    .re-cost { font-size: 1rem; font-weight: bold; color: var(--accent); min-width: 50px; text-align: right; }
+    .del-btn { background: none; border: 1px solid #c0392b; border-radius: 2px; color: #c0392b; width: 19px; height: 19px; cursor: pointer; font-size: .72rem; display: flex; align-items: center; justify-content: center; transition: all .1s; flex-shrink: 0; }
+    .del-btn:hover { background: #c0392b; color: white; }
+    .dup-btn { background: none; border: 1px solid var(--border); border-radius: 2px; color: var(--ink-light); width: 19px; height: 19px; cursor: pointer; font-size: .72rem; display: flex; align-items: center; justify-content: center; transition: all .1s; flex-shrink: 0; }
+    .dup-btn:hover { background: var(--accent-light); color: white; }
+
+    /* UPGRADES */
+    .upgrades { margin-top: 5px; border-top: 1px dotted var(--border); padding-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
+    .upg-label { display: flex; align-items: baseline; gap: 3px; cursor: pointer; background: rgba(139,69,19,.07); border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; font-size: .67rem; color: var(--ink-light); transition: background .1s; user-select: none; }
+    .upg-label:hover { background: rgba(139,69,19,.18); }
+    .upg-label input { margin: 0; cursor: pointer; }
+    .upg-label.checked { background: rgba(139,69,19,.22); color: var(--ink); font-weight: bold; border-color: var(--accent); }
+    .upg-cost { font-weight: bold; margin-left: 2px; }
+    .upg-cost.neg { color: var(--green); }
+    .upg-cost.pos { color: var(--red); }
+    .upg-effect-print { display: none; }
+
+    /* FOOTER */
+    .empty-state { text-align: center; color: var(--ink-light); opacity: .42; padding: 36px 14px; font-style: italic; font-size: .88rem; }
+    .roster-foot { background: var(--parchment-dark); border-top: 2px solid var(--border); padding: 9px 13px; flex-shrink: 0; }
+    .bar-track { background: rgba(44,24,16,.15); border: 1px solid var(--border); border-radius: 4px; height: 9px; overflow: hidden; margin-bottom: 6px; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width .25s ease,background .25s ease; background: var(--green); }
+    .bar-fill.warn { background: #b07000; } .bar-fill.over { background: var(--red); }
+    .foot-row { display: flex; align-items: center; justify-content: space-between; }
+    .pts-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-light); }
+    .pts-val { font-size: 1.15rem; font-weight: bold; color: var(--ink); }
+    .pts-val.over { color: var(--red); }
+    .foot-btns { display: flex; gap: 5px; }
+    .icon-btn { background: var(--ink); color: var(--parchment); border: none; border-radius: 2px; padding: 4px 11px; font-family: inherit; font-size: .7rem; text-transform: uppercase; letter-spacing: .8px; cursor: pointer; transition: background .12s; }
+    .icon-btn:hover { background: var(--accent); }
+    .icon-btn.danger { background: #7a1a1a; }
+    .icon-btn.danger:hover { background: var(--red); }
+
+    .fr-roster { display:none; }
+    .glossary-print { display:none; }
+    .rasgo-granted { color:var(--accent); font-style:italic; }
+    .rasgo-tip { position:relative; cursor:help; border-bottom:1px dotted var(--border); display:inline-block; }
+    .rasgo-tip::after { content:attr(data-tip); display:none; position:absolute; bottom:calc(100% + 4px); left:0; background:var(--ink); color:var(--parchment); font-size:.65rem; font-style:normal; line-height:1.45; padding:5px 8px; border-radius:3px; width:240px; white-space:normal; z-index:200; box-shadow:0 2px 6px var(--shadow); pointer-events:none; }
+    .rasgo-tip:hover::after { display:block; }
+
+    /* FACTION / PREREQS / TALENT */
+    .faction-rule { background:rgba(139,69,19,.08); border:1px solid var(--border); border-radius:3px; padding:6px 8px; margin-bottom:6px; }
+    .fr-name { font-size:.86rem; font-weight:bold; color:var(--ink); }
+    .fr-cost { font-size:.76rem; color:var(--accent); font-weight:bold; margin-left:6px; }
+    .fr-effect { font-size:.76rem; color:var(--ink-light); font-style:italic; margin-top:4px; line-height:1.45; }
+    .upg-warn { color:#b07000; font-size:.7em; }
+    .unit-max { font-size:.58rem; font-weight:normal; color:var(--accent); background:rgba(139,69,19,.12); border:1px solid var(--accent-light); border-radius:2px; padding:0 3px; margin-left:4px; vertical-align:middle; }
+    .comp-talent-effect { font-size:.74rem; color:var(--ink-light); font-style:italic; margin-top:3px; line-height:1.4; }
+
+    /* ARMY COMPOSITION */
+    .army-comp { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 5px; display: none; }
+    .comp-title { font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-light); margin-bottom: 4px; }
+    .comp-rows { display: flex; flex-direction: column; gap: 2px; }
+    .comp-row { display: flex; align-items: center; gap: 5px; }
+    .comp-tipo { font-size: .63rem; color: var(--ink); min-width: 82px; }
+    .comp-count { font-size: .63rem; font-weight: bold; color: var(--ink); min-width: 22px; text-align: right; }
+    .comp-bar-wrap { flex: 1; background: rgba(44,24,16,.12); border-radius: 2px; height: 6px; overflow: hidden; }
+    .comp-bar { height: 100%; border-radius: 2px; background: var(--accent-light); transition: width .2s ease; }
+    .comp-bar.specialist { background: var(--accent); }
+    .comp-pct { font-size: .6rem; color: var(--ink-light); min-width: 28px; text-align: right; }
+    .comp-specialist { font-size: .78rem; font-weight: bold; color: var(--accent); margin-top: 4px; padding: 2px 5px; border: 1px solid var(--accent); border-radius: 2px; background: rgba(139,69,19,.08); display: inline-block; }
+
+    /* SCROLLBAR */
+    .panel-body::-webkit-scrollbar { width: 5px; }
+    .panel-body::-webkit-scrollbar-track { background: var(--parchment-dark); }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--accent-light); border-radius: 3px; }
+
+    /* SPONSOR */
+    .sponsor-bar {
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+      padding: 4px 14px; background: var(--parchment-dark);
+      border-top: 1px solid var(--border); opacity: .45; flex-shrink: 0;
+      transition: opacity .2s;
+    }
+    .sponsor-bar:hover { opacity: .75; }
+    .sponsor-bar span { font-size: .55rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-light); }
+    .sponsor-bar img { height: 70px; object-fit: contain; }
+
+    /* PRINT */
+    @media print {
+      /* Reset layout to block flow */
+      body { display: block !important; min-height: 0 !important; background: white !important; font-size: 10pt; color: black !important; }
+      .main { display: block !important; overflow: visible !important; flex: none !important; height: auto !important; }
+      .panel { display: block !important; overflow: visible !important; height: auto !important; border: none !important; }
+      .panel-body { overflow: visible !important; height: auto !important; max-height: none !important; }
+
+      /* Hide browser panel and interactive controls */
+      .panel:first-child { display: none !important; }
+      .controls, .cat-tabs, .del-btn, .mini-btn, .foot-btns, .add-btn, .bar-track, .back-link, .sponsor-bar { display: none !important; }
+      .panel-head { background: white !important; border-bottom: 1pt solid #ccc !important; }
+      .panel-title { color: #333 !important; font-size: 10pt; }
+
+      /* Header */
+      header { background: white !important; border-bottom: 2pt solid #333; padding: 8pt 12pt; }
+      header * { color: black !important; }
+      h1 { font-size: 14pt; letter-spacing: 1px; }
+      h1 em { color: #444 !important; }
+
+      /* Roster entries */
+      .roster-entry { break-inside: avoid; page-break-inside: avoid; border: 1pt solid #aaa !important; border-radius: 0 !important; margin-bottom: 5pt; padding: 5pt 7pt; background: white !important; }
+      .re-name { font-size: 10pt; }
+      .re-sub, .re-stats { color: #444 !important; font-size: 8pt; }
+      .re-cost { color: black !important; font-size: 10pt; }
+      .mini-count { font-size: 9pt; }
+
+      /* Upgrades — only show selected, with their effect text */
+      .upgrades { flex-wrap: wrap; gap: 3pt; }
+      .upg-label:not(.checked) { display: none !important; }
+      .upg-label.checked { display: inline-flex !important; border: 1pt solid #888 !important; background: #f0f0f0 !important; color: black !important; font-size: 8pt; padding: 1pt 4pt; border-radius: 0; }
+      .upg-cost { color: black !important; }
+      .upg-effect-print { display: inline !important; font-style: italic; color: #555; font-size: 7.5pt; margin-left: 3pt; }
+
+      /* Special rules */
+      .re-notas { display: block !important; color: #444 !important; font-size: 7.5pt; }
+
+      /* Footer */
+      .roster-foot { border-top: 2pt solid #333; background: white !important; padding: 5pt 7pt; margin-top: 6pt; }
+      .pts-label { color: #333 !important; font-size: 8pt; }
+      .pts-val { color: black !important; font-size: 12pt; }
+
+      /* Faction rule in roster */
+      .fr-roster { display:block !important; border:1pt solid #ccc; padding:4pt 6pt; margin-bottom:6pt; }
+      .fr-roster .fr-name { font-size:9pt; font-weight:bold; }
+      .fr-roster .fr-cost { font-size:8pt; color:#555; margin-left:4pt; }
+      .fr-roster .fr-effect { font-size:7.5pt; font-style:italic; color:#444; margin-top:2pt; }
+
+      /* Army composition */
+      .army-comp { display: block !important; border-top: 1pt solid #ccc; margin-top: 5pt; padding-top: 4pt; }
+      .comp-title { color: #333 !important; }
+      .comp-tipo { color: black !important; }
+      .comp-count, .comp-pct { color: #333 !important; }
+      .comp-bar-wrap { background: #eee !important; }
+      .comp-bar { background: #888 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .comp-specialist { color: #333 !important; border-color: #333 !important; background: #eee !important; }
+
+      /* Trait glossary */
+      .glossary-print { display:block !important; margin-top:8pt; border-top:2pt solid #333; padding-top:6pt; }
+      .glossary-title { font-size:9pt; font-weight:bold; text-transform:uppercase; letter-spacing:.5pt; margin-bottom:4pt; }
+      .glossary-entry { display:flex; gap:5pt; margin-bottom:3pt; font-size:7.5pt; line-height:1.4; }
+      .glossary-name { font-weight:bold; min-width:90pt; flex-shrink:0; }
+      .glossary-def { color:#333; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <a class="back-link" href="index.html">← Inicio</a>
+      <h1>Shakos <em>&amp; Bayonets</em> — Constructor de Listas</h1>
+    </div>
+    <div class="controls">
+      <div class="ctrl"><label>Ejército</label>
+        <select id="armySel" onchange="setArmy(this.value)">
+          <option value="frances">Ejército Francés</option>
+          <option value="britanico">Ejército Británico / Portugués</option>
+          <option value="prusiano">Ejército Prusiano</option>
+          <option value="espanol">Ejército Español</option>
+          <option value="austriaco">Ejército Austriaco</option>
+          <option value="ruso">Ejército Ruso</option>
+          <option value="menores">Naciones Menores</option>
+        </select></div>
+      <div class="ctrl"><label>Puntos</label>
+        <input type="number" id="budgetIn" value="300" min="50" max="9999" step="25" onchange="setBudget(+this.value)"></div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Unidades disponibles</span>
+      <div class="cat-tabs">
+        <button class="cat-tab active" data-cat="all"        onclick="setCat('all')">Todas</button>
+        <button class="cat-tab"        data-cat="mando"      onclick="setCat('mando')">Mando</button>
+        <button class="cat-tab"        data-cat="infanteria" onclick="setCat('infanteria')">Infantería</button>
+        <button class="cat-tab"        data-cat="caballeria" onclick="setCat('caballeria')">Caballería</button>
+        <button class="cat-tab"        data-cat="artilleria" onclick="setCat('artilleria')">Artillería</button>
+      </div>
+    </div>
+    <div class="panel-body" id="browser"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Lista de ejército</span>
+    </div>
+    <div class="panel-body" id="roster"></div>
+    <div class="roster-foot">
+      <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+      <div class="foot-row">
+        <div><div class="pts-label">Puntos usados</div><div class="pts-val" id="ptsDisp">0 / 300</div></div>
+        <div class="foot-btns">
+          <button class="icon-btn danger" onclick="clearRoster()">Vaciar</button>
+          <button class="icon-btn" onclick="saveList()">Guardar</button>
+          <button class="icon-btn" onclick="loadList()">Cargar</button>
+          <button class="icon-btn" onclick="deleteList()">Borrar</button>
+          <button class="icon-btn" onclick="shareList()">Compartir</button>
+          <button class="icon-btn" onclick="exportPDF()">Exportar PDF</button>
+        </div>
+      </div>
+      <div class="army-comp" id="armyComp"></div>
+    </div>
+  </div>
+</div>
+<div id="glossaryPrint" class="glossary-print"></div>
+
+<script>
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function u(id,name,cat,base,minis,extra,xc,stats,upgrades,notas){
+  return {id,name,cat,base,minis,extra,xc,stats,upgrades:upgrades||[],notas:notas||''};
+}
+function s(tipo,disc,disp,agr,def,equip,rasgos){
+  return {tipo,disc,disp,agr,def,equip,rasgos:rasgos||''};
+}
+function upg(id,name,cost,effect){ return {id,name,cost,effect}; }
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const ARMIES = {
+
+frances:{name:"Francés", units:[
+  u("fr_of","Oficial francés","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("due","Duelista",2,"Lanza 10 dados en lugar de 8 en Duelo de Oficiales; o puede repetir un dado de ataque en cada combate cuerpo a cuerpo"),
+     upg("gim","Guardia Imperial",3,"Req. Guardia Imperial. Gana Élite y Veterano"),
+     upg("grd","Oficial de Grenadiers",1,"Req. Grenadiers. Gana Veterano"),
+     upg("mos","Mosquete",1,"Solo si acompaña a Inf. Ligera. Gana Mosquete"),
+     upg("vol","Oficial de Voltigeurs",2,"Solo si acompaña a Inf. Ligera. Gana Explorador"),
+     upg("pen","Penacho",2,"Solo si acompaña a Caballería. Gana Espadachines")]),
+  u("fr_can","Cantinera","mando",10,1,0,0,
+    s("Apoyo","Miliciano","-","-","-","-","No combatiente"),
+    [],
+    "Solo puede incluirse una Cantinera. No puede moverse voluntariamente a 6'' o menos de un enemigo. Se elimina si un enemigo se acerca a 6'' o menos. Las unidades a 4'' o menos reciben +1 a chequeos de reacción y reagrupamiento."),
+  u("fr_fus","Fusiliers / Chasseurs à Pied","infanteria",80,8,4,10,
+    s("Inf. Línea","Curtido","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("des","Desmotivados",-5,"Ganan Desanimados (si se escoge, todas las unidades de Fusiliers y Chasseurs del ejército deben tenerla)"),
+     upg("rec","Reclutas",-20,"La Disciplina pasa a Recluta"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("cha","Chasseurs",10,"Reemplaza Orden Cerrado por Ligero (representa Chasseurs de infantería ligera)")]),
+  u("fr_gren","Grenadiers / Carabiniers","infanteria",92,8,4,12,
+    s("Inf. Línea","Curtido","6+","5+","5+","Mosquete","Orden Cerrado, Veterano"),
+    [upg("car","Carabiniers",10,"Reemplaza Orden Cerrado por Ligero (representa Carabiniers de infantería ligera)")]),
+  u("fr_volt","Voltigeurs","infanteria",34,4,4,9,
+    s("Inf. Ligera","Hostigador","5+","6+","6+","Mosquete","Explorador"),
+    [upg("agu","Aguerridos",7,"Ganan Veterano"),
+     upg("eli","Tiradores de élite",5,"Ganan Tirador Experto")]),
+  u("fr_gim","Guardia Imperial (Infantería)","infanteria",98,6,6,16,
+    s("Inf. Línea","Curtido","5+","5+","4+","Mosquete","Orden Cerrado, Veterano, Élite"),
+    [upg("vgd","Vieja Guardia",20,"Ganan Intrépidos"),
+     upg("chg","Chasseurs de la Guardia Imperial",5,"La unidad pasa a Inf. Ligera y reemplaza Orden Cerrado por Ligeros"),
+     upg("vgg","Voltigeurs de la Guardia Imperial",-5,"La unidad pasa a Inf. Ligera, Disciplina → Hostigador, Orden Cerrado → Explorador (máx 8 minis)")]),
+  u("fr_gnof","Oficial de la Guardia Nacional","mando",22,1,0,0,
+    s("Oficial","Curtido","6+","6+","5+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera")]),
+  u("fr_gn","Guardia Nacional","infanteria",41,8,4,5,
+    s("Infantería","Recluta","7+","7+","6+","Mosquete","Orden Cerrado, Cobardes"),
+    [upg("des","Desmotivados",-5,"Ganan Desanimados")]),
+  u("fr_hus","Húsares / Chasseurs à Cheval","caballeria",59,6,2,10,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Reemplaza la carabina por lanza de caballería (representa Chevau-légers Lanciers)"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines")]),
+  u("fr_ecl","Éclaireurs / Gardes d'Honneur / Chasseurs à Cheval Guardia","caballeria",84,6,2,14,
+    s("Cab. Ligera","Curtido","6+","5+","4+","Carabina, pistola y sable","Caballería Ligera, Veterano, Élite"),
+    [upg("lan","Lanceros",15,"Reemplaza la carabina por lanza de caballería (representa Chevau-léger Lanciers de la Guardia Imperial)")]),
+  u("fr_drag","Dragones","caballeria",78,6,6,13,
+    s("Caballería","Curtido","6+","5+","4+","Mosquete y sable","Caballería, Orden Cerrado"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("api","A pie",-30,"La unidad pierde Caballería y los sables")]),
+  u("fr_drgg","Dragones de la Guardia Imperial","caballeria",109,6,6,18,
+    s("Caballería","Curtido","6+","4+","4+","Carabina, pistola y sable","Caballería, Orden Cerrado, Élite, Veterano"),
+    []),
+  u("fr_cui","Cuirassiers / Carabiniers à Cheval","caballeria",80,6,6,13,
+    s("Caballería","Curtido","6+","5+","4+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    []),
+  u("fr_gcav","Grenadiers à Cheval / Gendarmes d'élite","caballeria",111,6,6,18,
+    s("Caballería","Curtido","6+","4+","4+","Carabina, pistola y sable","Caballería, Orden Cerrado, Veterano, Élite"),
+    []),
+  u("fr_art","Artillería francesa","artilleria",47,3,6,16,
+    s("Artillería","Curtido","6+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar"),
+     upg("sar","Sin armón",-10,"La unidad no puede atalajarse")]),
+]},
+
+britanico:{name:"Británico / Portugués", units:[
+  u("br_of","Oficial británico","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("fle","Flemático",2,"Todos los resultados de Huida se convierten en Retroceso"),
+     upg("grd","Guardia",3,"Req. Guardias Británicos. Gana Élite y Veterano"),
+     upg("agu","Aguerridos",1,"Req. Granaderos o Highlanders. Gana Veterano"),
+     upg("lig","Oficial Inf. Ligera",2,"Solo Inf. Ligera. Gana Explorador"),
+     upg("mos","Mosquete",1,"Solo Inf. Ligera. Gana Mosquete"),
+     upg("cpr","Carabina de precisión",2,"Solo Inf. Ligera. Gana Carabina de precisión")]),
+  u("br_lin","Infantería de Línea Británica","infanteria",88,8,4,11,
+    s("Inf. Línea","Curtido","5+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("fla","Ligeros — Cía. de Flanco",10,"Reemplaza Orden Cerrado por Ligeros"),
+     upg("gra","Granaderos — Cía. de Flanco",10,"Gana Veterano. La Agresividad mejora a 5+")]),
+  u("br_lig","Infantería Ligera Británica","infanteria",34,4,4,9,
+    s("Inf. Ligera","Hostigador","5+","6+","6+","Mosquete","Explorador"),
+    [upg("eli","Tiradores de élite",5,"Gana Tirador Experto")]),
+  u("br_hig","Highlanders","infanteria",100,8,4,13,
+    s("Inf. Línea","Curtido","6+","5+","5+","Mosquete","Orden Cerrado, Espadachines"),
+    [upg("fla","Ligeros — Cía. de Flanco",10,"Reemplaza Orden Cerrado por Ligeros"),
+     upg("gra","Granaderos — Cía. de Flanco",10,"Gana Veterano")]),
+  u("br_gua","Guardias Británicos","infanteria",98,6,6,16,
+    s("Inf. Línea","Curtido","5+","5+","4+","Mosquete","Orden Cerrado, Veterano, Élite"),
+    [upg("fla","Ligeros — Cía. de Flanco",10,"Reemplaza Orden Cerrado por Ligeros")]),
+  u("br_rif","Tiradores (Rifles)","infanteria",42,4,4,11,
+    s("Inf. Ligera","Hostigador","5+","7+","6+","Carabina de precisión","Explorador, Tirador Experto"),
+    [upg("eli","Regimiento de élite",25,"Gana Élite")]),
+  u("br_hus","Húsares / Dragones Ligeros","caballeria",53,6,2,9,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería Ligera, Impetuosos"),
+    []),
+  u("br_dra","Dragones","caballeria",80,6,6,13,
+    s("Caballería","Curtido","6+","5+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("imp","Impetuosos",-10,"Gana Impetuosos"),
+     upg("grd","Regimiento de la Guardia",50,"Gana Élite y Veterano")]),
+  u("br_art","Artillería británica","artilleria",47,3,3,16,
+    s("Artillería","Curtido","5+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar"),
+     upg("agu","Aguerridos",10,"Gana Veterano")]),
+  u("pt_of","Oficial portugués","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("gra","Oficial Granadero",1,"Req. Granaderos. Gana Veterano"),
+     upg("lig","Oficial Ligero",3,"Req. Ligeros. Gana Explorador; Disciplina → Hostigador"),
+     upg("cac","Oficial Caçador",2,"Req. Caçadores. Gana Explorador y Tirador Experto; Disciplina → Hostigador"),
+     upg("mos","Mosquete",1,"Solo Oficial Ligero o Caçador. Gana Mosquete"),
+     upg("cpr","Carabina de precisión",2,"Solo Oficial Ligero o Caçador. Gana Carabina de precisión")]),
+  u("pt_fus","Fusileros portugueses","infanteria",80,8,4,10,
+    s("Inf. Línea","Curtido","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("ine","Inexpertos",-20,"La Disciplina pasa a Recluta"),
+     upg("des","Desmotivados",-5,"Gana Desanimados"),
+     upg("gra","Granaderos",10,"Gana Veterano")]),
+  u("pt_lig","Ligeros portugueses","infanteria",32,4,4,8,
+    s("Inf. Ligera","Hostigador","6+","6+","5+","Mosquete","Explorador"),
+    [upg("agu","Aguerridos",10,"Gana Veterano")]),
+  u("pt_cac","Caçadores","infanteria",34,4,4,9,
+    s("Inf. Ligera","Hostigador","5+","7+","6+","Mosquete","Explorador, Tirador Experto"),
+    [upg("agu","Aguerridos",10,"Gana Veterano"),
+     upg("eli","Tiradores",15,"Gana Élite"),
+     upg("cpr","Carabina de precisión",14,"Reemplaza el Mosquete por Carabina de precisión")]),
+  u("pt_cab","Caballería portuguesa","caballeria",59,6,6,10,
+    s("Caballería","Recluta","6+","6+","6+","Carabina, pistola y sable","Caballería, Orden Cerrado, Desanimados"),
+    []),
+  u("pt_art","Artillería portuguesa","artilleria",44,3,3,15,
+    s("Artillería","Curtido","6+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+]},
+
+prusiano:{name:"Prusiano", units:[
+  u("pr_of","Oficial prusiano","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("reg","Regimiento prestigioso",3,"Req. unidad de Regimiento prestigioso. Gana Élite y Veterano"),
+     upg("mar","Marcha prusiana",2,"Cuando el Oficial usa la carta ¡Adelante! para dar una acción de movimiento a una unidad en columna, la unidad aumenta su movimiento en +2''"),
+     upg("grd","Oficial Granadero",1,"Req. Granaderos. Gana Veterano"),
+     upg("lig","Oficial de Ligeros",2,"Solo si acompaña a Inf. Ligera. Gana Explorador"),
+     upg("mos","Mosquete",1,"Solo si acompaña a Inf. Ligera. Gana Mosquete"),
+     upg("cpr","Carabina de precisión",2,"Solo si acompaña a Inf. Ligera. Gana Carabina de precisión")]),
+  u("pr_mos","Mosqueteros / Granaderos / Reservistas","infanteria",80,8,4,10,
+    s("Inf. Línea","Curtido","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("eli","Regimiento prestigioso",30,"Ganan Veterano y Élite"),
+     upg("res","Reservistas",-10,"La Disciplina pasa a Recluta")]),
+  u("pr_fus","Fusileros / Schützen 3ª Fila","infanteria",34,4,4,9,
+    s("Inf. Ligera","Hostigador","5+","6+","5+","Mosquete","Explorador"),
+    [upg("agu","Aguerridos",7,"Ganan Veterano"),
+     upg("eli","Regimiento prestigioso",30,"Ganan Veterano y Élite"),
+     upg("res","Reservistas",-7,"La Disciplina pasa a Recluta")]),
+  u("pr_sch","Schützen / Jägers / Voluntarios Jägers","infanteria",40,4,4,10,
+    s("Inf. Ligera","Hostigador","5+","5+","7+","Carabina de precisión","Explorador"),
+    [upg("eli","Tiradores de élite",7,"Ganan Tirador Experto"),
+     upg("dis","Resistentes a la disciplina",-7,"Solo Voluntarios Jägers. Ganan Cobardes")]),
+  u("pr_hus","Húsares / Ulanos","caballeria",60,6,2,10,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Ganan Lanza de caballería (los Ulanos deben elegir esta opción)"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines"),
+     upg("mal","Mal entrenados",-5,"Solo Ulanos con Veterano. La Agresividad pasa a 7+")]),
+  u("pr_dra","Dragones prusianos","caballeria",77,6,6,13,
+    s("Caballería","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("eli","Regimiento de élite",50,"Ganan Élite y Veterano. La Agresividad pasa a 5+")]),
+  u("pr_cor","Coraceros prusianos","caballeria",80,6,6,13,
+    s("Caballería","Curtido","6+","5+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("d07","Después de 1807",-5,"Elimina la Carabina")]),
+  u("pr_lwof","Oficial Landwehr / Freikorps","mando",20,1,0,0,
+    s("Milicia","Curtido","6+","6+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("inf","Oficial de inf. Freikorps",1,"Reemplaza todo el equipamiento por Mosquete")]),
+  u("pr_lwin","Infantería Landwehr","infanteria",41,8,6,5,
+    s("Milicia","Recluta","6+","7+","6+","Mosquete","Orden Cerrado, Cobardes"),
+    [upg("mal","Mal entrenados",-10,"Ganan Desanimados"),
+     upg("for","Forjados en el crisol de la batalla",20,"Pierden Cobardes. La Disciplina pasa a Curtido"),
+     upg("sep","Unidad separada",5,"Ganan Auxiliares — Infantería de Línea")]),
+  u("pr_lwca","Caballería Landwehr","caballeria",31,6,6,5,
+    s("Caballería","Recluta","7+","6+","6+","Sable y lanza","Orden Cerrado, Desanimados, Caballería"),
+    [upg("sep","Unidad separada",5,"Ganan Auxiliares — Infantería de Línea")]),
+  u("pr_fkin","Infantería Freikorps","infanteria",24,4,4,6,
+    s("Irregulares","Hostigador","6+","7+","6+","Mosquete","Explorador"),
+    []),
+  u("pr_fkca","Caballería Freikorps","caballeria",34,6,2,6,
+    s("Irregulares","Hostigador","7+","7+","6+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Reemplaza la Carabina por Lanza de caballería")]),
+  u("pr_art","Artillería prusiana","artilleria",44,3,3,15,
+    s("Artillería","Curtido","6+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+]},
+
+espanol:{name:"Español", units:[
+  u("es_of","Oficial español","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("pre","Regimiento prestigioso",3,"Req. unidad de Regimiento prestigioso. Gana Veterano y Élite"),
+     upg("agu","Oficial de Aguerridos",1,"Req. unidad de Aguerridos. Gana Veterano"),
+     upg("caz","Oficial de Cazadores",2,"Req. Cazadores. Gana Explorador"),
+     upg("org","Orgullo",3,"Cuando se juega la carta ¡Adelante!, todas las unidades del tipo del oficial a 6'' o menos pueden quitarse un marcador de Aturdido")]),
+  u("es_sac","Sacerdote","mando",10,1,0,0,
+    s("Irregulares","Miliciano","8+","7+","6+","Pistola o trabuco","Nativos"),
+    [],
+    "Solo puede incluirse un Sacerdote. Cuando recibe una acción, puede elegir una unidad que esté huyendo a 4'' o menos; en lugar de resolver la acción, esa unidad puede intentar reagruparse inmediatamente como si hubiera sido activada."),
+  u("es_fus","Fusileros de Línea","infanteria",64,8,4,8,
+    s("Inf. Línea","Recluta","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("des","Desmotivados",-10,"Ganan Desanimados"),
+     upg("pre","Regimiento prestigioso",30,"Ganan Élite"),
+     upg("end","Endurecidos",20,"La Disciplina pasa a Curtido"),
+     upg("agu","Aguerridos",10,"Ganan Veterano")]),
+  u("es_lig","Infantería Ligera española","infanteria",44,6,6,7,
+    s("Inf. Línea","Recluta","6+","7+","6+","Mosquete","Ligeros"),
+    [upg("end","Endurecidos",20,"La Disciplina pasa a Curtido")]),
+  u("es_caz","Cazadores españoles","infanteria",32,4,4,8,
+    s("Inf. Ligera","Hostigador","5+","7+","6+","Mosquete","Explorador"),
+    [upg("des","Desmotivados",-5,"Ganan Desanimados"),
+     upg("agu","Aguerridos",7,"Ganan Veterano")]),
+  u("es_hus","Húsares / Cazadores / Lanceros (Cab. Ligera)","caballeria",41,6,2,7,
+    s("Cab. Ligera","Recluta","6+","7+","6+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Reemplaza la carabina por lanza de caballería"),
+     upg("des","Desmotivados",-5,"Ganan Desanimados")]),
+  u("es_dra","Dragones / Caballería de Línea","caballeria",65,6,6,11,
+    s("Caballería","Recluta","6+","6+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("mor","Moral baja",-10,"Ganan Cobardes")]),
+  u("es_gua","Caballería de la Guardia","caballeria",80,6,6,13,
+    s("Caballería","Curtido","6+","5+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    []),
+  u("es_art","Artillería española","artilleria",48,3,3,16,
+    s("Artillería","Curtido","6+","7+","7+","Artillería","Artilleros, Intrépidos"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+  u("es_lvol","Líder de Voluntarios o Milicia","mando",25,1,0,0,
+    s("Milicia","Curtido","6+","6+","5+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("cru","Cruel",2,"Gana Espadachines")]),
+  u("es_vol","Voluntarios y Milicia","infanteria",34,8,4,4,
+    s("Milicia","Miliciano","7+","7+","6+","Mosquete","Orden Cerrado"),
+    []),
+  u("es_lgue","Líder de Guerrillas","mando",25,1,0,0,
+    s("Irregulares","Hostigador","5+","5+","4+","Pistola y sable","Nativos, Explorador"),
+    []),
+  u("es_gue","Guerrillas","infanteria",27,4,4,7,
+    s("Irregulares","Hostigador","6+","6+","6+","Trabuco","Nativos, Explorador"),
+    [upg("bie","Bien equipados",5,"Reemplaza los trabucos por mosquetes"),
+     upg("ine","Inexpertos",-12,"La Disciplina pasa a Miliciano"),
+     upg("ban","Bandoleros",7,"La Agresividad y la Defensa pasan a 5+")]),
+]},
+
+austriaco:{name:"Austriaco", units:[
+  u("au_of","Oficial austriaco","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("vet","Oficial veterano",2,"El ejército debe incluir al menos una unidad con Veterano. El oficial gana Veterano"),
+     upg("ort","Ortodoxia",-5,"Cuando se juega la carta ¡Adelante!, este oficial no consigue acciones pero se gana 1 punto de mando adicional")]),
+  u("au_lin","Fusileros — Infantería de Línea","infanteria",80,8,8,10,
+    s("Inf. Línea","Curtido","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("hun","Húngaros",-20,"La Disciplina pasa a Recluta"),
+     upg("des","Desmotivados",-8,"Ganan Desanimados"),
+     upg("agu","Aguerridos",12,"Ganan Veterano")]),
+  u("au_secl","Sección de Ligeros","infanteria",34,4,4,9,
+    s("Inf. Ligera","Hostigador","5+","6+","6+","Mosquete","Explorador"),
+    [upg("hun","Húngaros",-10,"La Disciplina pasa a Recluta")]),
+  u("au_gra","Granaderos austriacos","infanteria",92,8,8,12,
+    s("Inf. Línea","Curtido","6+","5+","5+","Mosquete","Orden Cerrado, Veterano"),
+    [upg("eli","Regimiento de élite",25,"Ganan Élite")]),
+  u("au_gre","Grenzers austriacos","infanteria",40,4,4,10,
+    s("Inf. Ligera","Hostigador","5+","6+","5+","Mosquete","Explorador, Nativos"),
+    [upg("lad","Más ladrones que soldados",-6,"Ganan Cobardes"),
+     upg("cpr","Carabina de precisión",14,"Reemplazan el Mosquete por Carabina de precisión")]),
+  u("au_jag","Jägers austriacos","infanteria",33,4,4,8,
+    s("Inf. Ligera","Hostigador","5+","7+","6+","Carabina","Explorador, Tirador Experto"),
+    [upg("agu","Aguerridos",7,"Ganan Veterano"),
+     upg("eli","Tiradores de élite",14,"Reemplazan la Carabina por Carabina de precisión")]),
+  u("au_lwof","Oficial Landwehr / Insurgente","mando",19,1,0,0,
+    s("Milicia","Curtido","6+","6+","5+","Pistola y sable",""),
+    []),
+  u("au_ins","Insurgentes o Landwehr","infanteria",48,8,8,6,
+    s("Milicia","Recluta","6+","7+","6+","Mosquete","Orden Cerrado"),
+    [upg("seg","Soldados de segunda clase",-6,"Ganan Desanimados")]),
+  u("au_hus","Húsares / Chevau-Légers / Ulanos","caballeria",59,6,6,10,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Reemplazan la Carabina por Lanza de caballería (Chevau-Légers y Ulanos deben elegir esta opción)"),
+     upg("fan","Fanfarrones",20,"Solo Húsares. Pierden la Pistola y ganan Espadachines"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("eli","Regimiento de élite",20,"Ganan Élite")]),
+  u("au_dra","Dragones austriacos","caballeria",77,6,6,13,
+    s("Caballería","Curtido","6+","6+","5+","Carabina y sable","Caballería, Orden Cerrado"),
+    [upg("eli","Regimiento de élite",50,"Ganan Élite y Veterano. La Agresividad pasa a 5+"),
+     upg("pen","Penacho",20,"Ganan Espadachines"),
+     upg("agu","Aguerridos",10,"Ganan Veterano")]),
+  u("au_cor","Coraceros austriacos","caballeria",83,6,6,14,
+    s("Caballería","Curtido","6+","5+","4+","Coraza, carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("eli","Regimiento de élite",50,"Ganan Élite y Veterano. La Agresividad pasa a 4+"),
+     upg("pen","Penacho",20,"Ganan Espadachines"),
+     upg("agu","Aguerridos",10,"Ganan Veterano")]),
+  u("au_art","Artillería austriaca","artilleria",47,3,3,16,
+    s("Artillería","Curtido","5+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+]},
+
+ruso:{name:"Ruso", units:[
+  u("ru_of","Oficial ruso","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("grd","Oficial Granadero",1,"Req. Granaderos. Gana Veterano"),
+     upg("cru","Cruel",3,"Cuando una unidad a 6'' deba hacer un chequeo de reagrupamiento, elimina una miniatura y la unidad supera el chequeo automáticamente")]),
+  u("ru_mos","Mosqueteros","infanteria",72,8,4,9,
+    s("Inf. Línea","Curtido","7+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("bay","La bayoneta es sabia",20,"Ganan Espadachines")]),
+  u("ru_gra","Granaderos rusos","infanteria",84,8,4,11,
+    s("Inf. Línea","Curtido","7+","5+","5+","Mosquete","Orden Cerrado, Veterano"),
+    [upg("bay","La bayoneta es sabia",20,"Ganan Espadachines")]),
+  u("ru_secl","Sección de Ligeros rusa","infanteria",28,4,4,7,
+    s("Inf. Ligera","Hostigador","6+","7+","6+","Mosquete","Explorador"),
+    [upg("gra","Regimiento de granaderos",7,"Ganan Veterano")]),
+  u("ru_jag","Jägers rusos","infanteria",59,6,6,10,
+    s("Inf. Línea","Curtido","6+","6+","6+","Mosquete","Ligeros"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano")]),
+  u("ru_gd","Regimientos de la Guardia","infanteria",90,6,4,15,
+    s("Inf. Línea","Curtido","6+","5+","4+","Mosquete","Orden Cerrado, Veterano, Élite"),
+    [upg("bay","La bayoneta es sabia",20,"Ganan Espadachines")]),
+  u("ru_elg","Tiradores de Élite de la Guardia","infanteria",53,4,4,13,
+    s("Inf. Ligera","Hostigador","5+","6+","5+","Mosquete","Explorador, Veterano, Élite, Tirador Experto"),
+    []),
+  u("ru_hus","Húsares / Ulanos / Jägers Montados","caballeria",59,6,2,10,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Ganan Lanza de caballería (los Ulanos deben elegir esta opción)"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines")]),
+  u("ru_cos","Cosacos","caballeria",60,6,2,10,
+    s("Cab. Ligera","Hostigador","6+","6+","6+","Lanza, pistola y sable","Caballería Ligera"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("lid","Ladrones indisciplinados",-10,"Ganan Cobardes")]),
+  u("ru_bas","Bashkirs / Kalmyks","caballeria",41,6,2,7,
+    s("Irregulares","Hostigador","6+","7+","6+","Arco y sable","Caballería Ligera"),
+    [upg("sal","Salvajes",15,"Ganan Feroz"),
+     upg("rea","Reorganización",10,"Reemplazan el arco por lanza de caballería")]),
+  u("ru_gdca","Húsares / Ulanos / Cosacos de la Guardia","caballeria",77,6,2,13,
+    s("Cab. Ligera","Curtido","6+","5+","5+","Carabina, pistola y sable","Caballería Ligera, Élite"),
+    [upg("lan","Lanceros",15,"Reemplazan la carabina por lanza de caballería (Ulanos y Cosacos de la Guardia deben elegir esta opción)"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines")]),
+  u("ru_dra","Dragones rusos","caballeria",78,6,6,13,
+    s("Caballería","Curtido","6+","6+","5+","Mosquete, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("des","Desmotivados",-5,"Ganan Desanimados")]),
+  u("ru_dgg","Dragones de la Guardia","caballeria",109,6,6,18,
+    s("Caballería","Curtido","6+","5+","5+","Mosquete, pistola y sable","Caballería, Orden Cerrado, Élite, Veterano"),
+    []),
+  u("ru_cor","Coraceros rusos","caballeria",81,6,6,14,
+    s("Caballería","Curtido","6+","5+","5+","Pistola y sable","Caballería, Orden Cerrado"),
+    [upg("cor","Corazas",10,"La Defensa pasa a 4+")]),
+  u("ru_lfg","Lifeguard / Chevaliers-Guard / Coraceros de la Guardia","caballeria",113,6,6,19,
+    s("Caballería","Curtido","6+","4+","5+","Pistola y sable","Caballería, Élite, Veterano, Orden Cerrado"),
+    [upg("cor","Corazas",10,"La Defensa pasa a 4+")]),
+  u("ru_art","Artillería rusa","artilleria",48,3,3,16,
+    s("Artillería","Curtido","5+","6+","7+","Artillería","Artilleros, Intrépidos"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+  u("ru_opof","Oficial Opolchenie","mando",19,1,0,0,
+    s("Milicia","Curtido","6+","6+","5+","Pistola y sable",""),
+    []),
+  u("ru_opi","Opolchenie (Infantería)","infanteria",20,8,8,3,
+    s("Milicia","Miliciano","7+","7+","6+","Mosquete","Orden Cerrado, Cobardes"),
+    [upg("pic","Picas",0,"Pierde el mosquete. La Agresividad pasa a 6+")]),
+  u("ru_opc","Opolchenie (Caballería)","caballeria",31,6,6,5,
+    s("Milicia","Miliciano","7+","6+","6+","Sable, lanza y pistola","Caballería, Cobardes"),
+    []),
+  u("ru_lgue","Líder Guerrillero / Voluntario","mando",21,1,0,0,
+    s("Irregulares","Hostigador","6+","6+","5+","Pistola y sable","Nativos, Explorador"),
+    []),
+  u("ru_gue","Guerrilleros","infanteria",20,4,4,5,
+    s("Irregulares","Hostigador","7+","6+","6+","Armas improvisadas (hachas, guadañas, picos, palos)","Cobardes, Explorador, Nativos"),
+    [upg("arm","Armas viejas",5,"Reemplaza las armas improvisadas por trabuco")]),
+  u("ru_vol","Voluntarios","infanteria",20,4,4,5,
+    s("Irregulares","Hostigador","6+","7+","6+","Mosquete","Explorador, Nativos"),
+    [upg("car","Carabinas",15,"Reemplaza el mosquete por carabina de precisión"),
+     upg("agu","Aguerridos",7,"Ganan Veterano")]),
+]},
+
+menores:{name:"Naciones Menores", units:[
+  u("mn_of","Oficial de Naciones Menores","mando",25,1,0,0,
+    s("Oficial","Curtido","5+","5+","4+","Pistola y sable",""),
+    [upg("mon","Montado",2,"Gana Caballería Ligera"),
+     upg("grd","Oficial Granadero",1,"Req. Granaderos. Gana Veterano"),
+     upg("lig","Oficial de tropas ligeras",2,"Req. unidad con Explorador. Gana Explorador")]),
+  u("mn_lin","Infantería de Línea","infanteria",80,8,4,10,
+    s("Inf. Línea","Curtido","6+","6+","5+","Mosquete","Orden Cerrado"),
+    [upg("seg","Infantería de segunda clase",-20,"La Disciplina pasa a Recluta (debe aplicarse a toda la Inf. de Línea del ejército)"),
+     upg("agu","Aguerridos",10,"Ganan Veterano (debe aplicarse a toda la Inf. de Línea del ejército)")]),
+  u("mn_gra","Granaderos","infanteria",92,6,6,12,
+    s("Inf. Línea","Curtido","6+","5+","5+","Mosquete","Orden Cerrado, Veterano"),
+    [upg("pre","Regimiento prestigioso",20,"Gana Élite (debe aplicarse a todos los Granaderos del ejército)")]),
+  u("mn_lig","Tropas Ligeras","infanteria",32,4,4,8,
+    s("Inf. Ligera","Hostigador","5+","7+","6+","Mosquete","Explorador"),
+    [upg("eli","Tiradores de élite",5,"Ganan Tirador Experto"),
+     upg("cpr","Carabina de precisión",15,"Reemplazan el Mosquete por Carabina de precisión"),
+     upg("agu","Aguerridos",10,"Ganan Veterano")]),
+  u("mn_cbl","Caballería Ligera","caballeria",59,6,2,10,
+    s("Cab. Ligera","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería Ligera"),
+    [upg("lan","Lanceros",15,"Reemplaza la Carabina por Lanza de caballería"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines")]),
+  u("mn_cab","Caballería","caballeria",77,6,6,13,
+    s("Caballería","Curtido","6+","6+","5+","Carabina, pistola y sable","Caballería, Orden Cerrado"),
+    [upg("lan","Lanceros",15,"Reemplaza la Carabina por Lanza de caballería"),
+     upg("agu","Aguerridos",10,"Ganan Veterano"),
+     upg("pen","Penacho",20,"Ganan Espadachines"),
+     upg("cor","Corazas",10,"La Defensa pasa a 4+"),
+     upg("pre","Regimiento prestigioso",50,"Ganan Élite y Veterano")]),
+  u("mn_art","Artillería","artilleria",44,3,3,15,
+    s("Artillería","Curtido","6+","7+","7+","Artillería","Artilleros"),
+    [upg("arm","Armón",10,"La unidad se puede atalajar")]),
+]},
+};
+
+const CAT_LABEL = {mando:"Mando",infanteria:"Infantería",caballeria:"Caballería",artilleria:"Artillería"};
+const CAT_ORDER = ["mando","infanteria","caballeria","artilleria"];
+
+// ── GAME DATA ─────────────────────────────────────────────────────────────────
+const UNIT_MAX = {fr_can:1, es_sac:1};
+const UPG_REQS = {
+  fr_of: {gim:['fr_gim'], grd:['fr_gren']},
+  br_of: {grd:['br_gua'], agu:['br_lin','br_hig']},
+  pt_of: {gra:['pt_fus'], lig:['pt_lig'], cac:['pt_cac']},
+  pr_of: {reg:['pr_mos','pr_fus','pr_sch'], grd:['pr_mos']},
+  es_of: {pre:['es_fus'], agu:['es_fus','es_lig','es_caz'], caz:['es_caz']},
+  ru_of: {grd:['ru_gra']},
+  mn_of: {grd:['mn_gra'], lig:['mn_lig']},
+};
+const FACTION_RULES = {
+  frances:  {name:"Superioridad táctica", cost:"3/4/5 pts mando", effect:"Permite que 1 o 2 unidades formadas en línea o columna ejecuten una acción de Movimiento. Las unidades trabadas en combate obtienen +1 a todos los chequeos de reacción tras el CaC. Coste según la mayor unidad elegida: 5 pts (≥10 minis), 4 pts (8–9 minis), 3 pts (≤7 minis)."},
+  britanico:{name:"Fuego continuado", cost:"4 pts mando", effect:"Elimina hasta 2 marcadores de Fuego de unidades con Orden Cerrado (de la misma unidad o de dos diferentes). En una fuerza portuguesa solo los Caçadores pueden beneficiarse, incluso careciendo del rasgo Orden Cerrado."},
+  prusiano: {name:"Reservistas", cost:"3 pts mando", effect:"Resuelve una acción con una unidad de Landwehr o Freikorps y una acción con un oficial a 6'' o menos de dicha unidad. Ambas unidades obtienen +1 a todos sus dados durante esa acción (disparo, ataque, defensa en CaC y reacción)."},
+  espanol:  {name:"La Úlcera española", cost:"4 pts mando", effect:"Otorga una acción de Movimiento con +2'' a un máximo de 2 unidades con los rasgos Nativos y/o Explorador. Si alguna de estas unidades no ha sido localizada por el enemigo, puede sustituirse por un marcador de Movimiento Oculto en lugar de resolver la acción."},
+  austriaco:{name:"Tácticas obsoletas", cost:"3/5 pts mando", effect:"Por 3 pts: acción con una unidad de al menos 12 miniaturas. Por 5 pts: dos unidades de al menos 12 miniaturas cada una. Cada una de estas unidades supera automáticamente su chequeo de Reagrupamiento si está Aturdida."},
+  ruso:     {name:"Estoicismo", cost:"2/3 pts mando", effect:"No sustituye a jugar una carta. Se usa cuando se necesita hacer un chequeo de reacción (por cualquier motivo). Antes de lanzar el dado, gasta 2 pts para lanzar 1 dado adicional, o 3 pts para lanzar 2 dados adicionales. Elige el resultado que prefieras."},
+  menores:  {name:"Bajo la sombra de los gigantes", cost:"6 pts mando", effect:"Al comienzo de la partida elige un tipo de tropa (no artillería). Otorga dos acciones consecutivas a una unidad del tipo elegido que no esté Aturdida ni Huyendo. Si se resuelve un movimiento para trabar en CaC, debe ser la primera acción, nunca la segunda."},
+};
+const SPECIALIST_TALENTS = {
+  "Inf. Línea":  {name:"Élan", effect:"Unidades de Inf. de Línea formadas en línea a 6'' o menos de su oficial añaden +2'' a su distancia de movimiento si dicho movimiento les permite trabarse en combate cuerpo a cuerpo con el enemigo."},
+  "Inf. Ligera": {name:"Retroceder", effect:"Cuando un oficial o una unidad de Inf. Ligera amiga a 6'' o menos del oficial es objetivo de un movimiento para trabar en combate, puede lanzar un dado antes de resolver el combate. Con resultado igual o superior a su Reagrupamiento, puede optar por Retroceder en lugar de Huir. La unidad queda Aturdida al finalizar el movimiento."},
+  "Cab. Ligera": {name:"Vanguardia", effect:"Cuando el oficial o una unidad de Cab. Ligera amiga a 6'' o menos es objetivo del fuego enemigo, puede lanzar un dado. Con resultado igual o superior a su Reagrupamiento, realiza un Retroceso inmediato. Se recalculan los modificadores de fuego desde la nueva posición. Si ya no es visible o está fuera del rango de localización, la acción de disparo se cancela y la unidad que disparó pierde su acción."},
+  "Caballería":  {name:"Formación de Carga", effect:"Cuando una unidad de Caballería declara movimiento para trabar en CaC a 6'' o menos de un oficial con este talento, puede realizar primero un movimiento para formar línea antes de resolver la carga. La unidad objetivo debe estar dentro del rango de movimiento antes de realizarse el movimiento de formación."},
+  "Milicia":     {name:"Rivalidad Amistosa", effect:"El oficial y las unidades de Milicia a 6'' o menos del mismo obtienen un bono de +2 a los chequeos de reacción, en lugar del +1 habitual."},
+  "Irregulares": {name:"Guerrilla", effect:"Después de que el oficial o una unidad Irregular amiga a 6'' o menos realice una acción de disparo, puede lanzar un dado. Con resultado igual o superior a su Reagrupamiento, puede realizar inmediatamente una acción de Movimiento."},
+};
+
+const RASGO_DESC = {
+  "Orden Cerrado":   "Puede formarse en línea o columna (mín. 6 minis). +2 a chequeos de reacción. En línea puede ejecutar Fuego de Salva (afecta a todas las minis en el corredor frontal a 16''). Al cargar, el objetivo debe superar un chequeo de reacción. En columna por carretera: +4'' de movimiento.",
+  "Veterano":        "Puede repetir los 0 en chequeos de reacción, en dados de ataque y en dados de defensa en CaC.",
+  "Élite":           "Recibe una acción adicional cuando se juega la carta ¡Adelante!. Al hacer un chequeo de reacción, lanza 3d10 y elimina el resultado más alto y el más bajo.",
+  "Explorador":      "Sin penalización de movimiento en terreno difícil (el muy difícil cuenta como difícil). +1'' de movimiento. Las unidades que intentan localizarla sufren -1 columna en la tabla de localización.",
+  "Nativos":         "La cobertura ligera cuenta como densa. +1'' de movimiento. Si está completamente en cobertura y recibe disparos, obtiene +1 al chequeo de reacción. Las unidades que intentan localizarlos sufren -1 columna (no acumulable con Explorador).",
+  "Caballería":      "Montada a caballo. +4'' de movimiento, pero las penalizaciones por terreno difícil/muy difícil se duplican. No puede entrar en edificios. Solo puede usar carabinas y pistolas a caballo.",
+  "Caballería Ligera":"Igual que Caballería pero con +6'' de movimiento en lugar de +4''.",
+  "Cobardes":        "Todos los resultados de Retroceso (con o sin Aturdido) se convierten en resultado de Huida.",
+  "Desanimados":     "Sin oficiales a 6'' o menos: solo se mueve la mitad de su distancia y debe superar un chequeo de reacción antes de poder trabarse en CaC.",
+  "Tirador Experto": "Puede repetir los 0 al disparar. Cuando no está en formación puede realizar una acción de Apuntar (+2 al siguiente ataque de disparo; el marcador se pierde si la unidad se mueve o realiza otra acción).",
+  "Ligeros":         "Al inicio de la partida elige entre el rasgo Explorador o el rasgo Orden Cerrado, sin cambiar su tipo de tropa.",
+  "Artilleros":      "Cada miniatura cuenta como 3 al determinar el coste de la habilidad de mando Orden. La unidad siempre cuenta como en Orden Abierto.",
+  "Intrépidos":      "Al necesitar un chequeo de reacción no lanza el dado. El resultado es siempre 9 (antes de aplicar modificadores).",
+  "Espadachines":    "En combate cuerpo a cuerpo puede repetir cualquier dado de ataque que no haya logrado impactar.",
+  "Impetuosos":      "Cuando recibe una acción debe usarla para trabarse en CaC si hay una unidad enemiga alcanzable, visible y con menos minis (las unidades huyendo siempre cuentan como menos). Al inicio de la acción puede lanzar un dado: con resultado ≥ Reagrupamiento, ignora este rasgo en esa acción.",
+  "Auxiliar":        "Sigue las órdenes de los oficiales del tipo de tropa indicado entre paréntesis: recibe sus bonos en chequeos de reacción y puede recibir acciones mediante la carta ¡Adelante!",
+  "Ligero":          "Al inicio de la partida elige entre el rasgo Explorador o el rasgo Orden Cerrado, sin cambiar su tipo de tropa.",
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let S = {army:"frances",budget:300,cat:"all",roster:[],uid:1};
+
+// ── LOGIC ─────────────────────────────────────────────────────────────────────
+function findUnit(ak,uid){ return ARMIES[ak].units.find(u=>u.id===uid); }
+function entryCost(e){
+  const u=findUnit(e.ak,e.uid2);
+  let c=u.base+e.extra*u.xc;
+  e.upgs.forEach(id=>{const upg=u.upgrades.find(x=>x.id===id);if(upg)c+=upg.cost;});
+  return c;
+}
+function totalCost(){ return S.roster.reduce((s,e)=>s+entryCost(e),0); }
+function statsLine(st){
+  const parts=[];
+  if(st.disc) parts.push(st.disc);
+  if(st.disp&&st.disp!=='-') parts.push('Disp '+st.disp);
+  if(st.agr&&st.agr!=='-') parts.push('Agr '+st.agr);
+  if(st.def&&st.def!=='-') parts.push('Def '+st.def);
+  return parts.join(' · ');
+}
+function computeEffectiveStats(u, selectedUpgIds){
+  const st={...u.stats};
+  selectedUpgIds.forEach(id=>{
+    const upg=u.upgrades.find(x=>x.id===id);if(!upg)return;
+    const eff=upg.effect;
+    // Disciplina
+    const d=eff.match(/[Dd]isciplina\s+pasa\s+a\s+(?:ser\s+)?(\w+)/)||eff.match(/[Dd]isciplina\s*[→:]\s*(\w+)/);
+    if(d) st.disc=d[1];
+    // Agresividad y Defensa juntas: "Agresividad y [la] Defensa pasan a X+"
+    const both=eff.match(/[Aa]gresividad\s+y\s+(?:la\s+)?[Dd]efensa\s+pasan?\s+a\s+(\d+\+)/);
+    if(both){st.agr=both[1];st.def=both[1];}
+    else{
+      const a=eff.match(/[Aa]gresividad\s+(?:pasa|mejora)\s+a\s+(\d+\+)/)||eff.match(/[Aa]gresividad\s*[→:]\s*(\d+\+)/);
+      if(a) st.agr=a[1];
+      const df=eff.match(/[Dd]efensa\s+pasa\s+a\s+(\d+\+)/)||eff.match(/[Dd]efensa\s*[→:]\s*(\d+\+)/);
+      if(df) st.def=df[1];
+    }
+    // Disparo
+    const dp=eff.match(/[Dd]isparo\s+pasa\s+a\s+(\d+\+)/)||eff.match(/[Dd]isparo\s*[→:]\s*(\d+\+)/);
+    if(dp) st.disp=dp[1];
+    // Equipamiento: "Reemplaza [el/los/la/las] X por Y" (solo si Y no es un rasgo)
+    const eq=eff.match(/[Rr]eemplaza\s+(?:el\s+|los\s+|la\s+|las\s+)?(.+?)\s+por\s+(.+?)(?:\s*[.(,]|$)/);
+    if(eq){
+      const toVal=eq[2].trim();
+      if(!RASGO_DESC[toVal]&&!RASGO_DESC[toVal+'s']&&st.equip){
+        const fromStem=eq[1].trim().replace(/s$/i,'');
+        const toCapital=toVal.charAt(0).toUpperCase()+toVal.slice(1).replace(/s$/,'');
+        st.equip=st.equip.replace(new RegExp(fromStem,'i'),toCapital);
+      }
+    }
+  });
+  return st;
+}
+function computeEffectiveRasgos(u, selectedUpgIds){
+  const base=u.stats.rasgos?u.stats.rasgos.split(',').map(r=>r.trim()).filter(Boolean):[];
+  const set=new Set(base);
+  const known=Object.keys(RASGO_DESC).sort((a,b)=>b.length-a.length);
+  selectedUpgIds.forEach(id=>{
+    const upg=u.upgrades.find(x=>x.id===id);if(!upg)return;
+    const eff=upg.effect;
+    known.forEach(r=>{
+      if(!eff.includes(r))return;
+      const i=eff.indexOf(r);
+      const ctx=eff.slice(Math.max(0,i-30),i);
+      if(/[Pp]ierde[n]?\s*$/.test(ctx)) set.delete(r);
+      else if(/[Rr]eemplaza\b/.test(ctx)&&!/ por\s*$/.test(ctx)) set.delete(r);
+      else set.add(r);
+    });
+  });
+  return Array.from(set);
+}
+function rasgosHtmlEff(u, selectedUpgIds){
+  const base=new Set(u.stats.rasgos?u.stats.rasgos.split(',').map(r=>r.trim()):[]);
+  const eff=computeEffectiveRasgos(u,selectedUpgIds);
+  if(!eff.length)return'';
+  return eff.map(t=>{
+    const isNew=!base.has(t);
+    const tip=RASGO_DESC[t]?` data-tip="${RASGO_DESC[t]}"`:'' ;
+    return `<span class="rasgo-tip${isNew?' rasgo-granted':''}"${tip}>${t}</span>`;
+  }).join(', ');
+}
+function rasgosHtml(rasgos){
+  if(!rasgos)return'';
+  return rasgos.split(',').map(r=>{const t=r.trim();return RASGO_DESC[t]?`<span class="rasgo-tip" data-tip="${RASGO_DESC[t]}">${t}</span>`:t;}).join(', ');
+}
+function efectoHtml(effect){
+  let h=effect;
+  Object.keys(RASGO_DESC).sort((a,b)=>b.length-a.length).forEach(r=>{
+    if(h.includes(r)) h=h.replace(r,`<span class="rasgo-tip" data-tip="${RASGO_DESC[r]}">${r}</span>`);
+  });
+  return h;
+}
+function reqMet(reqIds){ return reqIds.some(id=>S.roster.some(e=>e.uid2===id&&e.ak===S.army)); }
+
+// ── PERSIST ────────────────────────────────────────────────────────────────────
+function saveRoster(){
+  try{ localStorage.setItem('shakos_auto',JSON.stringify({army:S.army,budget:S.budget,roster:S.roster,uid:S.uid})); }catch(e){}
+}
+function loadRoster(){
+  try{
+    const d=JSON.parse(localStorage.getItem('shakos_auto')||'null');
+    if(d&&d.roster){ S.army=d.army||S.army;S.budget=d.budget||S.budget;S.roster=d.roster;S.uid=d.uid||1;
+      document.getElementById('armySel').value=S.army;
+      document.getElementById('budgetIn').value=S.budget;
+    }
+  }catch(e){}
+}
+function saveList(){
+  const name=prompt('Nombre para esta lista:');if(!name)return;
+  try{
+    const lists=JSON.parse(localStorage.getItem('shakos_lists')||'{}');
+    lists[name]={army:S.army,budget:S.budget,roster:S.roster,uid:S.uid};
+    localStorage.setItem('shakos_lists',JSON.stringify(lists));
+    alert('Lista "'+name+'" guardada.');
+  }catch(e){alert('Error al guardar.');}
+}
+function loadList(){
+  try{
+    const lists=JSON.parse(localStorage.getItem('shakos_lists')||'{}');
+    const names=Object.keys(lists);
+    if(!names.length){alert('No hay listas guardadas.');return;}
+    const name=prompt('Cargar lista:\n'+names.map((n,i)=>(i+1)+'. '+n).join('\n')+'\n\nEscribe el nombre:');
+    if(!name||!lists[name]){alert('Lista no encontrada.');return;}
+    const d=lists[name];S.army=d.army;S.budget=d.budget;S.roster=d.roster;S.uid=d.uid||1;
+    document.getElementById('armySel').value=S.army;
+    document.getElementById('budgetIn').value=S.budget;
+    renderBrowser();renderRoster();
+  }catch(e){alert('Error al cargar.');}
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderBrowser(){
+  const army=ARMIES[S.army],cat=S.cat,el=document.getElementById("browser");
+  const units=cat==="all"?army.units:army.units.filter(u=>u.cat===cat);
+  let h="";
+  if(cat==="all"||cat==="mando"){
+    const fr=FACTION_RULES[S.army];
+    if(fr)h+=`<div class="faction-rule"><span class="fr-name">${fr.name}</span><span class="fr-cost">[${fr.cost}]</span><div class="fr-effect">${fr.effect}</div></div>`;
+  }
+  if(!units.length){el.innerHTML=h+'<div class="empty-state">Sin unidades en esta categoría</div>';return;}
+  const groups={};
+  units.forEach(u=>{(groups[u.cat]=groups[u.cat]||[]).push(u);});
+  CAT_ORDER.forEach(c=>{
+    if(!groups[c])return;
+    if(cat==="all")h+=`<div class="cat-sep">${CAT_LABEL[c]}</div>`;
+    groups[c].forEach(u=>{
+      const rng=u.extra>0?`${u.minis}–${u.minis+u.extra} minis · +${u.xc}pts/mini`:`${u.minis} mini${u.minis>1?"s":""}`;
+      const st=statsLine(u.stats);
+      const inRoster=S.roster.filter(e=>e.uid2===u.id&&e.ak===S.army).length;
+      const maxed=!!(UNIT_MAX[u.id]&&inRoster>=UNIT_MAX[u.id]);
+      const maxBadge=UNIT_MAX[u.id]?`<span class="unit-max">máx.${UNIT_MAX[u.id]}</span>`:'';
+      let upgHtml="";
+      if(u.upgrades.length){
+        const reqs=UPG_REQS[u.id]||{};
+        upgHtml='<div class="uc-upg-list">';
+        u.upgrades.forEach(upg=>{
+          const sign=upg.cost>0?'+':upg.cost===0?'':'-';
+          const absCost=Math.abs(upg.cost);
+          const cls=upg.cost<0?"neg":upg.cost>0?"pos":"";
+          const warn=reqs[upg.id]&&!reqMet(reqs[upg.id])?'<span class="upg-warn"> ⚠</span>':'';
+          upgHtml+=`<div class="uc-upg-item"><span class="un">${upg.name}</span>${warn} <span class="uc ${cls}">${sign}${absCost}pts</span>: <span class="ue">${efectoHtml(upg.effect)}</span></div>`;
+        });
+        upgHtml+='</div>';
+      }
+      const notasHtml=u.notas?`<div class="uc-notas">${u.notas}</div>`:'';
+      h+=`<div class="unit-card" onclick="${maxed?'':'addUnit(\''+u.id+'\')'}">
+        <div class="uc-top">
+          <div class="uc-info">
+            <div class="uc-name">${u.name}${maxBadge}</div>
+            <div class="uc-detail">${rng} · ${u.stats.tipo}</div>
+            ${st?`<div class="uc-stats">${st}${u.stats.rasgos?' · '+rasgosHtml(u.stats.rasgos):''}</div>`:''}
+            ${u.stats.equip&&u.stats.equip!=='-'?`<div class="uc-stats">${u.stats.equip}</div>`:''}
+          </div>
+          <span class="uc-cost">${u.base}pts</span>
+          <button class="add-btn" onclick="event.stopPropagation();addUnit('${u.id}')" ${maxed?'disabled':''}>+</button>
+        </div>
+        ${notasHtml}${upgHtml}
+      </div>`;
+    });
+  });
+  el.innerHTML=h;
+}
+
+function renderRoster(){
+  const el=document.getElementById("roster");
+  if(!S.roster.length){el.innerHTML='<div class="empty-state">Pulsa + en una unidad para añadirla a la lista</div>';refreshPts();return;}
+  const fr=FACTION_RULES[S.army];
+  let h=fr?`<div class="faction-rule fr-roster"><span class="fr-name">${fr.name}</span><span class="fr-cost">[${fr.cost}]</span><div class="fr-effect">${fr.effect}</div></div>`:'';
+
+  S.roster.forEach(e=>{
+    const u=findUnit(e.ak,e.uid2),cost=entryCost(e),minis=u.minis+e.extra;
+    const armyName=ARMIES[e.ak].name;
+    const effSt=computeEffectiveStats(u,e.upgs);
+    const st=statsLine(effSt);
+    let miniCtrl=u.extra>0
+      ?`<div class="mini-ctrl">
+          <button class="mini-btn" onclick="chExtra(${e.uid},-1)" ${e.extra===0?"disabled":""}>−</button>
+          <span class="mini-count">${minis} minis</span>
+          <button class="mini-btn" onclick="chExtra(${e.uid},+1)" ${e.extra===u.extra?"disabled":""}>+</button>
+        </div>`
+      :`<span class="mini-count">${minis} mini${minis>1?"s":""}</span>`;
+    let upgsHtml="";
+    if(u.upgrades.length){
+      upgsHtml='<div class="upgrades">';
+      u.upgrades.forEach(upg=>{
+        const chk=e.upgs.includes(upg.id);
+        const cls=upg.cost<0?"neg":"pos";
+        upgsHtml+=`<label class="upg-label ${chk?"checked":""}" title="${upg.effect}">
+          <input type="checkbox" ${chk?"checked":""} onchange="toggleUpg(${e.uid},'${upg.id}',this.checked)" style="display:none">
+          ${upg.name} <span class="upg-cost ${cls}">${upg.cost>0?'+':''}${upg.cost}pts</span><span class="upg-effect-print"> — ${upg.effect}</span>
+        </label>`;
+      });
+      upgsHtml+='</div>';
+    }
+    const notasRoster=u.notas?`<div class="re-notas">${u.notas}</div>`:'';
+    h+=`<div class="roster-entry">
+      <div class="re-top">
+        <div class="re-info">
+          <div class="re-name">${u.name}</div>
+          <div class="re-sub">${armyName} · ${u.stats.tipo}</div>
+          ${st?`<div class="re-stats">${effSt.equip} · ${st}</div>`:''}
+          ${(()=>{const r=rasgosHtmlEff(u,e.upgs);return r?`<div class="re-stats">${r}</div>`:''})()}
+        </div>
+        ${miniCtrl}
+        <span class="re-cost">${cost}pts</span>
+        <button class="dup-btn" onclick="dupUnit(${e.uid})" title="Duplicar">⧉</button>
+        <button class="del-btn" onclick="delUnit(${e.uid})" title="Quitar">✕</button>
+      </div>
+      ${notasRoster}${upgsHtml}
+    </div>`;
+  });
+  el.innerHTML=h;
+  refreshPts();
+  refreshGlossary();
+}
+
+function refreshPts(){
+  const spent=totalCost(),pct=S.budget>0?Math.min(spent/S.budget*100,100):0;
+  const bar=document.getElementById("bar"),disp=document.getElementById("ptsDisp");
+  bar.style.width=pct+"%";
+  bar.className="bar-fill"+(pct>=100?" over":pct>=80?" warn":"");
+  disp.textContent=`${spent} / ${S.budget}`;
+  disp.className="pts-val"+(spent>S.budget?" over":"");
+  refreshComp();
+}
+
+function refreshGlossary(){
+  const el=document.getElementById("glossaryPrint");
+  const used=new Set();
+  S.roster.forEach(e=>{
+    const u=findUnit(e.ak,e.uid2);
+    computeEffectiveRasgos(u,e.upgs).forEach(r=>{if(RASGO_DESC[r])used.add(r);});
+  });
+  if(!used.size){el.innerHTML="";return;}
+  const sorted=Array.from(used).sort();
+  let h='<div class="glossary-title">Rasgos utilizados</div>';
+  sorted.forEach(r=>{h+=`<div class="glossary-entry"><span class="glossary-name">${r}</span><span class="glossary-def">${RASGO_DESC[r]}</span></div>`;});
+  el.innerHTML=h;
+}
+
+const CMD_TIPOS = new Set(["Oficial","Apoyo"]);
+
+function refreshComp(){
+  const el=document.getElementById("armyComp");
+  if(!S.roster.length){el.style.display="none";el.innerHTML="";return;}
+  el.style.display="block";
+  const counts={};
+  let total=0,combatTotal=0;
+  S.roster.forEach(e=>{
+    const u=findUnit(e.ak,e.uid2);
+    const n=u.minis+e.extra,t=u.stats.tipo;
+    counts[t]=(counts[t]||0)+n;total+=n;
+    if(!CMD_TIPOS.has(t))combatTotal+=n;
+  });
+  let specialist=null;
+  if(combatTotal>0)Object.entries(counts).forEach(([t,n])=>{
+    if(!CMD_TIPOS.has(t)&&n/combatTotal>=0.5)specialist=t;
+  });
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  let h=`<div class="comp-title">Composición — ${total} miniaturas</div><div class="comp-rows">`;
+  sorted.forEach(([tipo,n])=>{
+    const pct=Math.round(n/total*100),isSpec=tipo===specialist;
+    h+=`<div class="comp-row"><span class="comp-tipo">${tipo}</span><span class="comp-count">${n}</span><div class="comp-bar-wrap"><div class="comp-bar${isSpec?" specialist":""}" style="width:${pct}%"></div></div><span class="comp-pct">${pct}%</span></div>`;
+  });
+  h+="</div>";
+  if(specialist){
+    const tal=SPECIALIST_TALENTS[specialist];
+    h+=`<div class="comp-specialist">Ejército especialista: ${specialist}</div>`;
+    if(tal)h+=`<div class="comp-talent-effect"><strong>${tal.name}:</strong> ${tal.effect}</div>`;
+  }
+  el.innerHTML=h;
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function addUnit(unitId){
+  if(UNIT_MAX[unitId]&&S.roster.filter(e=>e.uid2===unitId&&e.ak===S.army).length>=UNIT_MAX[unitId]){
+    alert('Solo se puede incluir '+UNIT_MAX[unitId]+' unidad de este tipo.');return;
+  }
+  S.roster.push({uid:S.uid++,ak:S.army,uid2:unitId,extra:0,upgs:[]});renderRoster();saveRoster();
+}
+function delUnit(uid){ S.roster=S.roster.filter(e=>e.uid!==uid);renderRoster();saveRoster(); }
+function chExtra(uid,d){ const e=S.roster.find(e=>e.uid===uid);if(!e)return;const u=findUnit(e.ak,e.uid2);e.extra=Math.max(0,Math.min(u.extra,e.extra+d));renderRoster();saveRoster(); }
+function toggleUpg(uid,upgId,on){
+  const e=S.roster.find(e=>e.uid===uid);if(!e)return;
+  if(on&&!e.upgs.includes(upgId))e.upgs.push(upgId);
+  else if(!on)e.upgs=e.upgs.filter(x=>x!==upgId);
+  renderRoster();saveRoster();
+}
+function setArmy(key){ S.army=key;renderBrowser(); }
+function setBudget(v){ if(v>0){S.budget=v;saveRoster();refreshPts();} }
+function setCat(cat){
+  S.cat=cat;
+  document.querySelectorAll(".cat-tab").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));
+  renderBrowser();
+}
+function clearRoster(){ if(S.roster.length&&confirm("¿Vaciar la lista?")){ S.roster=[];renderRoster();saveRoster(); } }
+function dupUnit(uid){
+  const e=S.roster.find(e=>e.uid===uid);if(!e)return;
+  if(UNIT_MAX[e.uid2]&&S.roster.filter(x=>x.uid2===e.uid2&&x.ak===e.ak).length>=UNIT_MAX[e.uid2]){alert('Solo se puede incluir '+UNIT_MAX[e.uid2]+' unidad de este tipo.');return;}
+  const idx=S.roster.indexOf(e);
+  S.roster.splice(idx+1,0,{uid:S.uid++,ak:e.ak,uid2:e.uid2,extra:e.extra,upgs:[...e.upgs]});
+  renderRoster();saveRoster();
+}
+function deleteList(){
+  try{
+    const lists=JSON.parse(localStorage.getItem('shakos_lists')||'{}');
+    const names=Object.keys(lists);
+    if(!names.length){alert('No hay listas guardadas.');return;}
+    const name=prompt('Eliminar lista:\n'+names.map((n,i)=>(i+1)+'. '+n).join('\n')+'\n\nEscribe el nombre:');
+    if(!name||!lists[name]){if(name)alert('Lista no encontrada.');return;}
+    if(confirm('¿Eliminar "'+name+'"?')){delete lists[name];localStorage.setItem('shakos_lists',JSON.stringify(lists));alert('Lista eliminada.');}
+  }catch(e){alert('Error al eliminar.');}
+}
+function shareList(){
+  try{
+    const data={army:S.army,budget:S.budget,roster:S.roster,uid:S.uid};
+    const encoded=btoa(encodeURIComponent(JSON.stringify(data)));
+    const url=location.href.split('#')[0]+'#lista='+encoded;
+    if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>alert('URL copiada al portapapeles.'));}
+    else{prompt('Copia esta URL para compartir la lista:',url);}
+  }catch(e){alert('Error al compartir.');}
+}
+function exportPDF(){
+  const style=document.createElement("style");
+  style.id="pdf-date";
+  style.textContent=`@media print { .roster-foot::after { content: "Fecha: ${new Date().toLocaleDateString("es-ES")}"; display:block; font-size:.7rem; color:#666; margin-top:4pt; } }`;
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(()=>{ const s=document.getElementById("pdf-date");if(s)s.remove(); },1000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadRoster();
+(function(){
+  const hash=location.hash;
+  if(!hash.startsWith('#lista='))return;
+  try{
+    const data=JSON.parse(decodeURIComponent(atob(hash.slice(7))));
+    if(data&&data.roster){
+      S.army=data.army||S.army;S.budget=data.budget||S.budget;S.roster=data.roster;S.uid=data.uid||1;
+      document.getElementById('armySel').value=S.army;
+      document.getElementById('budgetIn').value=S.budget;
+    }
+  }catch(e){}
+})();
+renderBrowser();
+renderRoster();
+</script>
+<div class="sponsor-bar">
+  <span>Con el apoyo de</span>
+  <a href="https://caliga.net/catalogo/" target="_blank" rel="noopener"><img src="imagenes/caliga.jpg" alt="Caliga"></a>
+</div>
+</body>
+</html>
