@@ -139,6 +139,11 @@
     .comp-bar.specialist { background: var(--accent); }
     .comp-pct { font-size: .6rem; color: var(--ink-light); min-width: 28px; text-align: right; }
     .comp-specialist { font-size: .78rem; font-weight: bold; color: var(--accent); margin-top: 4px; padding: 2px 5px; border: 1px solid var(--accent); border-radius: 2px; background: rgba(139,69,19,.08); display: inline-block; }
+    .comp-warnings { margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
+    .comp-warn { font-size: .63rem; padding: 3px 6px; border-radius: 2px; line-height: 1.35; }
+    .comp-warn.error { background: rgba(139,0,0,.09); border: 1px solid #8b0000; color: #8b0000; }
+    .comp-warn.warn  { background: rgba(176,112,0,.09); border: 1px solid #b07000; color: #7a4d00; }
+    .comp-warn.info  { background: rgba(44,24,16,.06); border: 1px solid var(--border); color: var(--ink-light); }
 
     /* SCROLLBAR */
     .panel-body::-webkit-scrollbar { width: 5px; }
@@ -1076,7 +1081,32 @@ function refreshComp(){
     h+=`<div class="comp-specialist">Ejército especialista: ${specialist}</div>`;
     if(tal)h+=`<div class="comp-talent-effect"><strong>${tal.name}:</strong> ${tal.effect}</div>`;
   }
+  const warns=buildWarnings();
+  if(warns.length){
+    h+='<div class="comp-warnings">';
+    warns.forEach(w=>h+=`<div class="comp-warn ${w.level}">⚠ ${w.msg}</div>`);
+    h+='</div>';
+  }
   el.innerHTML=h;
+}
+function buildWarnings(){
+  if(!S.roster.length)return[];
+  const warns=[];
+  let hasOfficer=false,artUnits=0,combatUnits=0;
+  S.roster.forEach(e=>{
+    const u=findUnit(e.ak,e.uid2);if(!u)return;
+    const t=u.stats.tipo;
+    if(t==='Oficial')hasOfficer=true;
+    if(t==='Artillería')artUnits++;
+    if(!CMD_TIPOS.has(t))combatUnits++;
+  });
+  if(!hasOfficer)
+    warns.push({level:'error',msg:'Sin oficial — no podrás activar unidades con las cartas de mando.'});
+  if(combatUnits>0&&artUnits/combatUnits>0.4)
+    warns.push({level:'warn',msg:`Mucha artillería: ${artUnits} de ${combatUnits} unidades de combate (recomendado ≤40%).`});
+  if(S.roster.length>0&&combatUnits===0)
+    warns.push({level:'warn',msg:'Solo tienes unidades de mando — añade infantería, caballería o artillería.'});
+  return warns;
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
